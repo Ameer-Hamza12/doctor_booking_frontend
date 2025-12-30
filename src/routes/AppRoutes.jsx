@@ -23,6 +23,8 @@ import Doctors from "../pages/admin/Doctors";
 import DoctorDashboard from "../pages/doctor/Dashboard";
 import Schedule from "../pages/doctor/Schedule";
 import DoctorAppointments from "../pages/doctor/Appointments";
+import DoctorProfile from "../pages/doctor/DoctorProfile";
+
 
 // Patient
 import PatientDashboard from "../pages/patient/Dashboard";
@@ -58,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
         <Route path="/doctor/schedule" element={<Schedule />} />
         <Route path="/doctor/appointments" element={<DoctorAppointments />} />
+        <Route path="/doctor/profile" element={<DoctorProfile />} />
       </Route>
 
       {/* Patient Routes */}
