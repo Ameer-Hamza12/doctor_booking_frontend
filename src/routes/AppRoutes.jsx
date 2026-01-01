@@ -30,6 +30,7 @@ import DoctorProfile from "../pages/doctor/DoctorProfile";
 import PatientDashboard from "../pages/patient/Dashboard";
 import BookAppointment from "../pages/patient/BookAppointment";
 import MyAppointments from "../pages/patient/MyAppointments";
+import FindDoctors from "../pages/patient/FindDoctors";
 
 import RoleBasedRoute from "./RoleBasedRoute";
 
@@ -68,6 +69,7 @@ const AppRoutes = () => {
         <Route path="/patient/dashboard" element={<PatientDashboard />} />
         <Route path="/patient/book" element={<BookAppointment />} />
         <Route path="/patient/appointments" element={<MyAppointments />} />
+        <Route path="/patient/find-doctors" element={<FindDoctors />} />
       </Route>
     </Routes>
   );
