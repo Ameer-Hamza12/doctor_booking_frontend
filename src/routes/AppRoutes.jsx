@@ -31,6 +31,9 @@ import PatientDashboard from "../pages/patient/Dashboard";
 import BookAppointment from "../pages/patient/BookAppointment";
 import MyAppointments from "../pages/patient/MyAppointments";
 import FindDoctors from "../pages/patient/FindDoctors";
+import PatientProfile from "../pages/patient/components/PatientProfile";
+import ProfileCompletionCard from "../pages/patient/components/ProfileCompletionCard";
+
 
 import RoleBasedRoute from "./RoleBasedRoute";
 
@@ -70,6 +73,8 @@ const AppRoutes = () => {
         <Route path="/patient/book" element={<BookAppointment />} />
         <Route path="/patient/appointments" element={<MyAppointments />} />
         <Route path="/patient/find-doctors" element={<FindDoctors />} />
+        <Route path="/patient/profile" element={<PatientProfile />} />
+        <Route path="/patient/profile-completion" element={<ProfileCompletionCard />} />
       </Route>
     </Routes>
   );
