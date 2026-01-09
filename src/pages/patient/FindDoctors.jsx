@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import PatientNavbar from '../../components/navbar/PatientNavbar';
 import api from '../../services/api';
-import { 
-  Search, 
-  Filter, 
-  Star, 
-  MapPin, 
-  Clock, 
+import {
+  Search,
+  Filter,
+  Star,
+  MapPin,
+  Clock,
   Users,
   Award,
   Calendar,
@@ -54,12 +54,12 @@ const FindDoctors = () => {
       setLoading(true);
       const response = await api.get('/patient/doctors');
       const doctorsData = response.data.data;
-      
+
       console.log('Doctors data:', doctorsData); // Debug log
-      
+
       setDoctors(doctorsData);
       setFilteredDoctors(doctorsData);
-      
+
       // Extract unique specializations
       const specs = [...new Set(doctorsData.map(doc => doc.specialization))];
       setSpecializations(specs);
@@ -91,51 +91,51 @@ const FindDoctors = () => {
   // Filter doctors based on search and filters
   useEffect(() => {
     let result = doctors;
-    
+
     // Search by name, specialization, or qualifications
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(doctor => {
         const nameMatch = doctor.name?.toLowerCase().includes(term) || false;
         const specMatch = doctor.specialization?.toLowerCase().includes(term) || false;
-        
+
         // Check qualifications array for matches
         let qualMatch = false;
         if (doctor.qualifications && Array.isArray(doctor.qualifications)) {
-          qualMatch = doctor.qualifications.some(q => 
-            q.degree?.toLowerCase().includes(term) || 
+          qualMatch = doctor.qualifications.some(q =>
+            q.degree?.toLowerCase().includes(term) ||
             q.university?.toLowerCase().includes(term)
           );
         }
-        
+
         return nameMatch || specMatch || qualMatch;
       });
     }
-    
+
     // Filter by specialization
     if (filters.specialization) {
-      result = result.filter(doctor => 
+      result = result.filter(doctor =>
         doctor.specialization === filters.specialization
       );
     }
-    
+
     // Filter by experience
     if (filters.minExperience) {
-      result = result.filter(doctor => 
+      result = result.filter(doctor =>
         doctor.experience >= parseInt(filters.minExperience)
       );
     }
-    
+
     // Filter by consultation fee
     if (filters.maxFee) {
-      result = result.filter(doctor => 
+      result = result.filter(doctor =>
         doctor.consultationFee <= parseInt(filters.maxFee)
       );
     }
-    
+
     // Sort doctors
     result.sort((a, b) => {
-      switch(filters.sortBy) {
+      switch (filters.sortBy) {
         case 'rating':
           return (b.rating || 0) - (a.rating || 0);
         case 'experience':
@@ -148,7 +148,7 @@ const FindDoctors = () => {
           return 0;
       }
     });
-    
+
     setFilteredDoctors(result);
   }, [doctors, searchTerm, filters]);
 
@@ -182,19 +182,19 @@ const FindDoctors = () => {
       };
 
       const response = await api.post('/patient/appointments', appointmentData);
-      
+
       setBookingStatus({
         type: 'success',
         message: 'Appointment booked successfully! Check your email for confirmation.'
       });
-      
+
       // Reset form and close modal after 3 seconds
       setTimeout(() => {
         setShowBookingModal(false);
         setSelectedDoctor(null);
         setBookingStatus(null);
       }, 3000);
-      
+
     } catch (error) {
       setBookingStatus({
         type: 'error',
@@ -206,7 +206,7 @@ const FindDoctors = () => {
   // Format qualifications for display
   const formatQualifications = (qualifications) => {
     if (!qualifications || !Array.isArray(qualifications)) return '';
-    
+
     return qualifications.map(q => `${q.degree} (${q.university})`).join(', ');
   };
 
@@ -238,7 +238,7 @@ const FindDoctors = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <PatientNavbar />
-      
+
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-teal-500 text-white">
         <div className="container mx-auto px-4 py-12">
@@ -262,7 +262,7 @@ const FindDoctors = () => {
                 <Filter className="w-5 h-5 mr-2 text-blue-600" />
                 Filters
               </h3>
-              
+
               {/* Search */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -279,7 +279,7 @@ const FindDoctors = () => {
                   />
                 </div>
               </div>
-              
+
               {/* Specialization Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -287,7 +287,7 @@ const FindDoctors = () => {
                 </label>
                 <select
                   value={filters.specialization}
-                  onChange={(e) => setFilters({...filters, specialization: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, specialization: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Specializations</option>
@@ -296,7 +296,7 @@ const FindDoctors = () => {
                   ))}
                 </select>
               </div>
-              
+
               {/* Experience Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -304,7 +304,7 @@ const FindDoctors = () => {
                 </label>
                 <select
                   value={filters.minExperience}
-                  onChange={(e) => setFilters({...filters, minExperience: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, minExperience: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Any Experience</option>
@@ -316,7 +316,7 @@ const FindDoctors = () => {
                   <option value="25">25+ years</option>
                 </select>
               </div>
-              
+
               {/* Fee Filter */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -324,7 +324,7 @@ const FindDoctors = () => {
                 </label>
                 <select
                   value={filters.maxFee}
-                  onChange={(e) => setFilters({...filters, maxFee: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, maxFee: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Any Fee</option>
@@ -337,7 +337,7 @@ const FindDoctors = () => {
                   <option value="10000">Up to $10,000</option>
                 </select>
               </div>
-              
+
               {/* Sort By */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -345,7 +345,7 @@ const FindDoctors = () => {
                 </label>
                 <select
                   value={filters.sortBy}
-                  onChange={(e) => setFilters({...filters, sortBy: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, sortBy: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="rating">Highest Rating</option>
@@ -354,7 +354,7 @@ const FindDoctors = () => {
                   <option value="fee_high">Fee: High to Low</option>
                 </select>
               </div>
-              
+
               <button
                 onClick={() => setFilters({
                   specialization: '',
@@ -381,7 +381,7 @@ const FindDoctors = () => {
                   Showing {filteredDoctors.length} of {doctors.length} doctors
                 </p>
               </div>
-              
+
               <div className="mt-4 md:mt-0">
                 <span className="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                   <CheckCircle className="w-4 h-4 mr-2" />
@@ -426,8 +426,8 @@ const FindDoctors = () => {
                         {/* Doctor Image */}
                         <div className="w-20 h-20 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 flex items-center justify-center overflow-hidden mr-4">
                           {doctor.profileImage ? (
-                            <img 
-                              src={doctor.profileImage} 
+                            <img
+                              src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api$/, '')}/${doctor.profileImage}`}
                               alt={doctor.name}
                               className="w-full h-full object-cover"
                             />
@@ -435,14 +435,14 @@ const FindDoctors = () => {
                             <Users className="w-10 h-10 text-white" />
                           )}
                         </div>
-                        
+
                         <div className="flex-1">
                           <div className="flex items-start justify-between">
                             <div>
                               <h3 className="text-xl font-bold text-gray-900">{formatDoctorName(doctor.name)}</h3>
                               <p className="text-blue-600 font-medium">{doctor.specialization}</p>
                             </div>
-                            
+
                             <div className="text-right">
                               <div className="flex items-center">
                                 <Star className="w-4 h-4 text-amber-400 fill-current mr-1" />
@@ -456,7 +456,7 @@ const FindDoctors = () => {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Hospital Information */}
                           <div className="mt-3">
                             <div className="flex items-start text-sm">
@@ -467,7 +467,7 @@ const FindDoctors = () => {
                               </span>
                             </div>
                           </div>
-                          
+
                           {/* Doctor Info */}
                           <div className="grid grid-cols-2 gap-4 mt-4">
                             <div className="flex items-center text-sm">
@@ -479,7 +479,7 @@ const FindDoctors = () => {
                               <span className="text-gray-700">Available Today</span>
                             </div>
                           </div>
-                          
+
                           {/* Qualifications */}
                           {doctor.qualifications && doctor.qualifications.length > 0 && (
                             <div className="mt-4">
@@ -493,7 +493,7 @@ const FindDoctors = () => {
                               </p>
                             </div>
                           )}
-                          
+
                           {/* License Number */}
                           {doctor.licenseNumber && (
                             <div className="mt-2">
@@ -506,7 +506,7 @@ const FindDoctors = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Action Footer */}
                     <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
                       <div className="flex items-center justify-between">
@@ -523,7 +523,7 @@ const FindDoctors = () => {
                             </span>
                           )}
                         </div>
-                        
+
                         <button
                           onClick={() => handleBookAppointment(doctor)}
                           className="px-6 py-2 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl font-medium hover:shadow-lg hover:-translate-y-0.5 transition-all"
@@ -565,11 +565,10 @@ const FindDoctors = () => {
 
               {/* Booking Status */}
               {bookingStatus && (
-                <div className={`mb-6 p-4 rounded-xl ${
-                  bookingStatus.type === 'success' 
-                    ? 'bg-green-50 border border-green-200 text-green-800' 
+                <div className={`mb-6 p-4 rounded-xl ${bookingStatus.type === 'success'
+                    ? 'bg-green-50 border border-green-200 text-green-800'
                     : 'bg-red-50 border border-red-200 text-red-800'
-                }`}>
+                  }`}>
                   <div className="flex items-center">
                     {bookingStatus.type === 'success' ? (
                       <CheckCircle className="w-5 h-5 mr-2" />
@@ -586,8 +585,8 @@ const FindDoctors = () => {
                 <div className="flex items-center">
                   <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-blue-600 to-teal-500 flex items-center justify-center overflow-hidden mr-4">
                     {selectedDoctor.profileImage ? (
-                      <img 
-                        src={selectedDoctor.profileImage} 
+                      <img
+                        src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api$/, '')}/${selectedDoctor.profileImage}`}
                         alt={selectedDoctor.name}
                         className="w-full h-full object-cover"
                       />
@@ -635,7 +634,7 @@ const FindDoctors = () => {
                   <input
                     type="date"
                     value={bookingData.date}
-                    onChange={(e) => setBookingData({...bookingData, date: e.target.value})}
+                    onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -647,7 +646,7 @@ const FindDoctors = () => {
                     <Clock className="w-4 h-4 inline mr-2" />
                     Select Time Slot
                   </label>
-                  
+
                   {loadingSlots ? (
                     <div className="text-center py-4">
                       <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
@@ -664,14 +663,13 @@ const FindDoctors = () => {
                           <button
                             key={`${day}-${index}`}
                             onClick={() => setBookingData({
-                              ...bookingData, 
+                              ...bookingData,
                               timeSlot: `${day} ${slot.startTime}-${slot.endTime}`
                             })}
-                            className={`p-3 rounded-lg border text-center ${
-                              bookingData.timeSlot === `${day} ${slot.startTime}-${slot.endTime}`
+                            className={`p-3 rounded-lg border text-center ${bookingData.timeSlot === `${day} ${slot.startTime}-${slot.endTime}`
                                 ? 'bg-blue-600 text-white border-blue-600'
                                 : 'bg-white text-gray-700 border-gray-300 hover:border-blue-500'
-                            }`}
+                              }`}
                           >
                             <div className="text-sm font-medium">{day}</div>
                             <div className="text-sm mt-1">
@@ -691,24 +689,22 @@ const FindDoctors = () => {
                   </label>
                   <div className="grid grid-cols-2 gap-4">
                     <button
-                      onClick={() => setBookingData({...bookingData, consultationType: 'online'})}
-                      className={`p-4 rounded-xl border-2 text-center ${
-                        bookingData.consultationType === 'online'
+                      onClick={() => setBookingData({ ...bookingData, consultationType: 'online' })}
+                      className={`p-4 rounded-xl border-2 text-center ${bookingData.consultationType === 'online'
                           ? 'border-blue-600 bg-blue-50 text-blue-700'
                           : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                      }`}
+                        }`}
                     >
                       <div className="font-medium">Online</div>
                       <div className="text-sm text-gray-500 mt-1">Video Call</div>
                     </button>
-                    
+
                     <button
-                      onClick={() => setBookingData({...bookingData, consultationType: 'offline'})}
-                      className={`p-4 rounded-xl border-2 text-center ${
-                        bookingData.consultationType === 'offline'
+                      onClick={() => setBookingData({ ...bookingData, consultationType: 'offline' })}
+                      className={`p-4 rounded-xl border-2 text-center ${bookingData.consultationType === 'offline'
                           ? 'border-blue-600 bg-blue-50 text-blue-700'
                           : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                      }`}
+                        }`}
                     >
                       <div className="font-medium">In-Person</div>
                       <div className="text-sm text-gray-500 mt-1">
@@ -725,7 +721,7 @@ const FindDoctors = () => {
                   </label>
                   <textarea
                     value={bookingData.notes}
-                    onChange={(e) => setBookingData({...bookingData, notes: e.target.value})}
+                    onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
                     rows="3"
                     placeholder="Describe your symptoms or any special requirements..."
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
