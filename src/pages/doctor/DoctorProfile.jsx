@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import DoctorNavbar from '../../components/navbar/DoctorNavbar';
-import { 
+import {
   User,
   Briefcase,
   GraduationCap,
@@ -32,6 +32,9 @@ const DoctorProfile = () => {
   const [saving, setSaving] = useState(false);
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [documentFiles, setDocumentFiles] = useState([]);
   const [formData, setFormData] = useState({
     experience: '',
     licenseNumber: '',
@@ -52,14 +55,17 @@ const DoctorProfile = () => {
       setLoading(true);
       const response = await api.get('/doctor/profile');
       const data = response.data.data;
-      
+
       setDoctorProfile(data);
+      if (data.profileImageUrl) {
+        setPreviewImage(data.profileImageUrl);
+      }
       setFormData({
         experience: data.experience || '',
         licenseNumber: data.licenseNumber || '',
         consultationFee: data.consultationFee || '',
-        qualifications: data.qualifications?.length > 0 
-          ? data.qualifications 
+        qualifications: data.qualifications?.length > 0
+          ? data.qualifications
           : [{ degree: '', university: '', year: '' }],
         hospital: data.hospital || {
           name: '',
@@ -115,6 +121,14 @@ const DoctorProfile = () => {
     }));
   };
 
+  // Remove qualification
+  const removeQualification = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      qualifications: prev.qualifications.filter((_, i) => i !== index)
+    }));
+  };
+
   // Add new qualification field
   const addQualification = () => {
     setFormData(prev => ({
@@ -123,45 +137,62 @@ const DoctorProfile = () => {
     }));
   };
 
-  // Remove qualification field
-  const removeQualification = (index) => {
-    if (formData.qualifications.length > 1) {
-      const updatedQualifications = formData.qualifications.filter((_, i) => i !== index);
-      setFormData(prev => ({
-        ...prev,
-        qualifications: updatedQualifications
-      }));
+  // Handle file changes
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImageFile(file);
+      setPreviewImage(URL.createObjectURL(file));
     }
+  };
+
+  const handleDocumentsChange = (e) => {
+    const files = Array.from(e.target.files);
+    setDocumentFiles(prev => [...prev, ...files]);
+  };
+
+  const removeDocument = (index) => {
+    setDocumentFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   // Save profile
   const handleSaveProfile = async () => {
     try {
       setSaving(true);
-      
+
       // Validate required fields
       if (!formData.licenseNumber || !formData.consultationFee) {
         alert('License number and consultation fee are required');
         return;
       }
 
-      // Prepare data for API
-      const profileData = {
-        experience: parseInt(formData.experience) || 0,
-        licenseNumber: formData.licenseNumber,
-        consultationFee: parseInt(formData.consultationFee) || 0,
-        qualifications: formData.qualifications.filter(q => 
-          q.degree && q.university && q.year
-        ),
-        hospital: formData.hospital
-      };
+      // Create FormData
+      const data = new FormData();
+      data.append('experience', parseInt(formData.experience) || 0);
+      data.append('licenseNumber', formData.licenseNumber);
+      data.append('consultationFee', parseInt(formData.consultationFee) || 0);
+      data.append('qualifications', JSON.stringify(formData.qualifications.filter(q => q.degree && q.university && q.year)));
+      data.append('hospital', JSON.stringify(formData.hospital));
 
-      await api.post('/doctor/profile', profileData);
-      
+      if (profileImageFile) {
+        data.append('profileImage', profileImageFile);
+      }
+
+      documentFiles.forEach(file => {
+        data.append('documents', file);
+      });
+
+      await api.post('/doctor/profile', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
       setIsEditing(false);
+      setDocumentFiles([]); // Clear queue
+      setProfileImageFile(null);
       fetchDoctorProfile(); // Refresh data
       alert('Profile updated successfully!');
     } catch (error) {
+      console.error('Save profile error:', error);
       alert(error.response?.data?.error || 'Error saving profile');
     } finally {
       setSaving(false);
@@ -190,7 +221,7 @@ const DoctorProfile = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <DoctorNavbar />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -200,13 +231,12 @@ const DoctorProfile = () => {
               Manage your professional profile and information
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-              doctorProfile?.approvedBy 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-yellow-100 text-yellow-800'
-            }`}>
+            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${doctorProfile?.approvedBy
+              ? 'bg-green-100 text-green-800'
+              : 'bg-yellow-100 text-yellow-800'
+              }`}>
               {doctorProfile?.approvedBy ? (
                 <>
                   <CheckCircle className="w-4 h-4 mr-2" />
@@ -219,7 +249,7 @@ const DoctorProfile = () => {
                 </>
               )}
             </span>
-            
+
             {!isEditing ? (
               <button
                 onClick={() => setIsEditing(true)}
@@ -270,8 +300,25 @@ const DoctorProfile = () => {
               {/* Card Header */}
               <div className="bg-gradient-to-r from-blue-50 to-teal-50 px-8 py-6 border-b border-gray-200">
                 <div className="flex items-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 flex items-center justify-center">
-                    <User className="w-10 h-10 text-white" />
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-blue-600 to-teal-500 flex items-center justify-center overflow-hidden relative">
+                    {previewImage ? (
+                      <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-10 h-10 text-white" />
+                    )}
+                    {isEditing && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+                        <label className="cursor-pointer w-full h-full flex items-center justify-center">
+                          <Upload className="w-6 h-6 text-white" />
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                      </div>
+                    )}
                   </div>
                   <div className="ml-6">
                     <h2 className="text-2xl font-bold text-gray-900">Dr. {user?.name}</h2>
@@ -299,7 +346,7 @@ const DoctorProfile = () => {
                     <User className="w-5 h-5 mr-3 text-blue-600" />
                     Basic Information
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -311,7 +358,7 @@ const DoctorProfile = () => {
                       </div>
                       <p className="text-xs text-gray-500 mt-2">Email cannot be changed</p>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Phone Number
@@ -321,7 +368,7 @@ const DoctorProfile = () => {
                         <span className="text-gray-900">{user?.phone || 'Not provided'}</span>
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Experience (Years)
@@ -343,7 +390,7 @@ const DoctorProfile = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Consultation Fee ($)
@@ -374,7 +421,7 @@ const DoctorProfile = () => {
                     <Shield className="w-5 h-5 mr-3 text-blue-600" />
                     License Information
                   </h3>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Medical License Number
@@ -417,7 +464,7 @@ const DoctorProfile = () => {
                       </button>
                     )}
                   </div>
-                  
+
                   {isEditing ? (
                     <div className="space-y-6">
                       {formData.qualifications.map((qual, index) => (
@@ -433,7 +480,7 @@ const DoctorProfile = () => {
                               </button>
                             )}
                           </div>
-                          
+
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -448,7 +495,7 @@ const DoctorProfile = () => {
                                 placeholder="e.g., MBBS, MD"
                               />
                             </div>
-                            
+
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 University
@@ -462,7 +509,7 @@ const DoctorProfile = () => {
                                 placeholder="University name"
                               />
                             </div>
-                            
+
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Year
@@ -513,7 +560,7 @@ const DoctorProfile = () => {
                     <Building className="w-5 h-5 mr-3 text-blue-600" />
                     Hospital/Clinic Information
                   </h3>
-                  
+
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -535,7 +582,7 @@ const DoctorProfile = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Address
@@ -556,7 +603,7 @@ const DoctorProfile = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -576,7 +623,7 @@ const DoctorProfile = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           State
@@ -595,7 +642,7 @@ const DoctorProfile = () => {
                           </div>
                         )}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           ZIP Code
@@ -617,6 +664,92 @@ const DoctorProfile = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Document Upload Section */}
+                <div className="mt-10 border-t border-gray-200 pt-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                      <FileText className="w-5 h-5 mr-3 text-blue-600" />
+                      Verification Documents
+                    </h3>
+                  </div>
+
+                  <div className="p-6 border border-gray-200 rounded-xl bg-gray-50">
+                    {isEditing ? (
+                      <div className="mb-6">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-blue-300 border-dashed rounded-lg cursor-pointer bg-blue-50 hover:bg-blue-100 transition-colors">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-8 h-8 mb-3 text-blue-500" />
+                            <p className="mb-2 text-sm text-blue-700">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
+                            </p>
+                            <p className="text-xs text-blue-500">
+                              PDF, JPG, or PNG (MAX. 5MB)
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            className="hidden"
+                            multiple
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            onChange={handleDocumentsChange}
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+
+                    {/* Pending Uploads */}
+                    {documentFiles.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Pending Uploads:</h4>
+                        <div className="space-y-2">
+                          {documentFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                              <span className="text-sm text-gray-600 truncate">{file.name}</span>
+                              <button
+                                onClick={() => removeDocument(index)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Existing Documents */}
+                    {doctorProfile?.documents?.length > 0 ? (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Documents:</h4>
+                        <div className="space-y-2">
+                          {doctorProfile.documents.map((doc, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                              <div className="flex items-center">
+                                <FileText className="w-4 h-4 text-blue-500 mr-2" />
+                                <span className="text-sm text-gray-600 truncate">
+                                  {doc.originalName || `Document ${index + 1}`}
+                                </span>
+                              </div>
+                              <a
+                                href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api$/, '')}/${doc.path}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                              >
+                                View
+                              </a>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500 text-sm py-4">
+                        No documents uploaded yet
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -630,38 +763,38 @@ const DoctorProfile = () => {
               className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6"
             >
               <h3 className="text-xl font-bold text-gray-900 mb-6">Profile Status</h3>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-700">Profile Completion</span>
                   <span className="font-bold text-blue-600">85%</span>
                 </div>
-                
+
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }}></div>
                 </div>
-                
+
                 <div className="space-y-3 mt-6">
                   <div className="flex items-center text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     <span>Basic Information</span>
                   </div>
-                  
+
                   <div className="flex items-center text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     <span>License Details</span>
                   </div>
-                  
+
                   <div className="flex items-center text-sm">
                     <Clock className="w-4 h-4 text-amber-500 mr-2" />
                     <span>Qualifications (Add more)</span>
                   </div>
-                  
+
                   <div className="flex items-center text-sm">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     <span>Contact Information</span>
                   </div>
-                  
+
                   <div className="flex items-center text-sm">
                     {doctorProfile?.approvedBy ? (
                       <>
@@ -687,23 +820,23 @@ const DoctorProfile = () => {
               className="bg-white rounded-3xl shadow-xl border border-gray-200 p-6"
             >
               <h3 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h3>
-              
+
               <div className="space-y-3">
                 <button className="w-full text-left px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-medium hover:bg-blue-100 transition-colors flex items-center">
                   <Upload className="w-5 h-5 mr-3" />
                   Upload Documents
                 </button>
-                
+
                 <button className="w-full text-left px-4 py-3 bg-green-50 text-green-700 rounded-xl font-medium hover:bg-green-100 transition-colors flex items-center">
                   <Shield className="w-5 h-5 mr-3" />
                   Verify License
                 </button>
-                
+
                 <button className="w-full text-left px-4 py-3 bg-purple-50 text-purple-700 rounded-xl font-medium hover:bg-purple-100 transition-colors flex items-center">
                   <Calendar className="w-5 h-5 mr-3" />
                   View Schedule
                 </button>
-                
+
                 <button className="w-full text-left px-4 py-3 bg-amber-50 text-amber-700 rounded-xl font-medium hover:bg-amber-100 transition-colors flex items-center">
                   <Star className="w-5 h-5 mr-3" />
                   View Reviews
@@ -719,23 +852,23 @@ const DoctorProfile = () => {
               className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-3xl border border-blue-200 p-6"
             >
               <h3 className="text-lg font-bold text-gray-900 mb-4">Profile Tips</h3>
-              
+
               <ul className="space-y-3">
                 <li className="flex items-start text-sm">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 mr-3"></div>
                   Complete all fields for better visibility
                 </li>
-                
+
                 <li className="flex items-start text-sm">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 mr-3"></div>
                   Add multiple qualifications to build trust
                 </li>
-                
+
                 <li className="flex items-start text-sm">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 mr-3"></div>
                   Keep your license number updated
                 </li>
-                
+
                 <li className="flex items-start text-sm">
                   <div className="w-2 h-2 bg-blue-600 rounded-full mt-1.5 mr-3"></div>
                   Higher profile completion = More patients

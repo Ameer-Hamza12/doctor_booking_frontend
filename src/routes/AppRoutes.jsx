@@ -17,6 +17,7 @@ import Signup from "../pages/auth/Signup";
 import AdminDashboard from "../pages/admin/Dashboard";
 import Users from "../pages/admin/UsersManagement";
 import Doctors from "../pages/admin/Doctors";
+import AdminProfile from "../pages/admin/AdminProfile";
 
 
 // Doctor
@@ -31,7 +32,7 @@ import PatientDashboard from "../pages/patient/Dashboard";
 import BookAppointment from "../pages/patient/BookAppointment";
 import MyAppointments from "../pages/patient/MyAppointments";
 import FindDoctors from "../pages/patient/FindDoctors";
-import PatientProfile from "../pages/patient/components/PatientProfile";
+import PatientProfile from "../pages/patient/PatientProfile";
 import ProfileCompletionCard from "../pages/patient/components/ProfileCompletionCard";
 
 
@@ -57,6 +58,7 @@ const AppRoutes = () => {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<Users />} />
         <Route path="/admin/doctors" element={<Doctors />} />
+        <Route path="/admin/profile" element={<AdminProfile />} />
       </Route>
 
       {/* Doctor Routes */}

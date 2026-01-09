@@ -102,8 +102,8 @@ const DoctorNavbar = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
                     {user?.profileImage ? (
-                      <img 
-                        src={user.profileImage} 
+                      <img
+                        src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001').replace(/\/api$/, '')}/${user.profileImage}`}
                         alt={user.name}
                         className="w-full h-full object-cover"
                       />
